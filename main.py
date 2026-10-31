@@ -195,7 +195,7 @@ def generate_html_body(instance):
     return html_body
 
 
-def create_instance_details_file_and_notify(instance, shape=ARM_SHAPE):
+def create_instance_details_file_and_notify(instance, shape=ARM_SHAPE, notify=True):
     """Create a file with details of instances and notify the user.
 
     Args:
@@ -217,7 +217,7 @@ def create_instance_details_file_and_notify(instance, shape=ARM_SHAPE):
     # Generate HTML body for email
     html_body = generate_html_body(instance)
 
-    if NOTIFY_EMAIL:
+    if NOTIFY_EMAIL and notify:
         send_email('OCI INSTANCE CREATED', html_body, EMAIL_FROM, EMAIL_TO, EMAIL_PASSWORD)
 
 
@@ -243,7 +243,7 @@ def notify_on_failure(failure_msg):
 
 
 def check_instance_state_and_write(compartment_id, shape, states=('RUNNING', 'PROVISIONING'),
-                                   tries=3):
+                                   tries=3, notify=True):
     """Check the state of instances in the specified compartment and take action when a matching instance is found.
 
     Args:
@@ -261,13 +261,13 @@ def check_instance_state_and_write(compartment_id, shape, states=('RUNNING', 'PR
             running_arm_instance = next((instance for instance in instance_list if
                                          instance.shape == shape and instance.lifecycle_state in states), None)
             if running_arm_instance:
-                create_instance_details_file_and_notify(running_arm_instance, shape)
+                create_instance_details_file_and_notify(running_arm_instance, shape, notify=notify)
                 return True
         else:
             micro_instance_list = [instance for instance in instance_list if
                                    instance.shape == shape and instance.lifecycle_state in states]
             if len(micro_instance_list) > 1 and SECOND_MICRO_INSTANCE:
-                create_instance_details_file_and_notify(micro_instance_list[-1], shape)
+                create_instance_details_file_and_notify(micro_instance_list[-1], shape, notify=notify)
                 return True
             if len(micro_instance_list) == 1 and not SECOND_MICRO_INSTANCE:
                 create_instance_details_file_and_notify(micro_instance_list[-1], shape)
@@ -462,7 +462,10 @@ def launch_instance():
     ssh_public_key = read_or_generate_ssh_public_key(SSH_AUTHORIZED_KEYS_FILE)
 
     # Step 5 - Launch Instance if it's not already exist and running
-    instance_exist_flag = check_instance_state_and_write(oci_tenancy, OCI_COMPUTE_SHAPE, tries=1)
+    # If an instance already exists, record it and exit without sending a duplicate success email.
+    instance_exist_flag = check_instance_state_and_write(
+        oci_tenancy, OCI_COMPUTE_SHAPE, tries=1, notify=False
+    )
 
     if OCI_COMPUTE_SHAPE == "VM.Standard.A1.Flex":
         shape_config = oci.core.models.LaunchInstanceShapeConfigDetails(ocpus=2, memory_in_gbs=12)
