@@ -242,7 +242,7 @@ def notify_on_failure(failure_msg):
         send_email('OCI INSTANCE CREATION SCRIPT: FAILED DUE TO AN ERROR', mail_body, EMAIL_FROM, EMAIL_TO, EMAIL_PASSWORD)
 
 
-def check_instance_state_and_write(compartment_id, shape, states=('RUNNING', 'PROVISIONING'),
+def check_instance_state_and_write(compartment_id, shape, states=('PROVISIONING', 'STARTING', 'RUNNING', 'STOPPING', 'STOPPED', 'TERMINATING'),
                                    tries=3, notify=True):
     """Check the state of instances in the specified compartment and take action when a matching instance is found.
 
@@ -270,7 +270,7 @@ def check_instance_state_and_write(compartment_id, shape, states=('RUNNING', 'PR
                 create_instance_details_file_and_notify(micro_instance_list[-1], shape, notify=notify)
                 return True
             if len(micro_instance_list) == 1 and not SECOND_MICRO_INSTANCE:
-                create_instance_details_file_and_notify(micro_instance_list[-1], shape)
+                create_instance_details_file_and_notify(micro_instance_list[-1], shape, notify=notify)
                 return True       
         if tries - 1 > 0:
             time.sleep(60)
