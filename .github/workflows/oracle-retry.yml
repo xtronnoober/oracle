@@ -2,8 +2,6 @@ name: Oracle A1 Capacity Retry
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 * * * *"
 
 permissions:
   contents: read
