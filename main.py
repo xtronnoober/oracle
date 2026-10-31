@@ -37,7 +37,8 @@ OS_VERSION = os.getenv("OS_VERSION", "").strip()
 ASSIGN_PUBLIC_IP = os.getenv("ASSIGN_PUBLIC_IP", "false").strip()
 BOOT_VOLUME_SIZE = os.getenv("BOOT_VOLUME_SIZE", "50").strip()
 NOTIFY_EMAIL = os.getenv("NOTIFY_EMAIL", 'False').strip().lower() == 'true'
-EMAIL = os.getenv("EMAIL", "").strip()
+EMAIL_FROM = os.getenv("EMAIL_FROM", "").strip()
+EMAIL_TO = os.getenv("EMAIL_TO", "").strip()
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "").strip()
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK", "").strip()
 
@@ -52,7 +53,7 @@ try:
                         for confg_var in [OCI_CONFIG, OCT_FREE_AD,WAIT_TIME,
                                 SSH_AUTHORIZED_KEYS_FILE, OCI_IMAGE_ID, 
                                 OCI_COMPUTE_SHAPE, SECOND_MICRO_INSTANCE, 
-                                OCI_SUBNET_ID, OS_VERSION, NOTIFY_EMAIL,EMAIL,
+                                OCI_SUBNET_ID, OS_VERSION, NOTIFY_EMAIL, EMAIL_FROM, EMAIL_TO,
                                 EMAIL_PASSWORD, DISCORD_WEBHOOK]
                         )
     config_has_spaces = any(' ' in value for section in config.sections() 
@@ -128,39 +129,31 @@ def write_into_file(file_path, data):
         file_writer.write(data)
 
 
-def send_email(subject, body, email, password):
-    """Send an HTML email using the SMTP protocol.
+def send_email(subject, body, sender_email, recipient_email, password):
+    """Send an HTML email through Gmail SMTP to a separate recipient.
 
     Args:
         subject (str): The subject of the email.
         body (str): The HTML body/content of the email.
-        email (str): The sender's email address.
-        password (str): The sender's email password or app-specific password.
+        sender_email (str): The Gmail account used to send the notification.
+        recipient_email (str): The destination email address.
+        password (str): The sender account's Google App Password.
 
     Raises:
-        smtplib.SMTPException: If an error occurs during the SMTP communication.
+        smtplib.SMTPException: If an error occurs during SMTP communication.
     """
-    # Set up the MIME
     message = MIMEMultipart()
     message["Subject"] = subject
-    message["From"] = email
-    message["To"] = email
+    message["From"] = sender_email
+    message["To"] = recipient_email
+    message.attach(MIMEText(body, "html"))
 
-    # Attach HTML content to the email
-    html_body = MIMEText(body, "html")
-    message.attach(html_body)
-
-    # Connect to the SMTP server
     with smtplib.SMTP("smtp.gmail.com", 587) as server:
         try:
-            # Start TLS for security
             server.starttls()
-            # Login to the server
-            server.login(email, password)
-            # Send the email
-            server.sendmail(email, email, message.as_string())
+            server.login(sender_email, password)
+            server.sendmail(sender_email, recipient_email, message.as_string())
         except smtplib.SMTPException as mail_err:
-            # Handle SMTP exceptions (e.g., authentication failure, connection issues)
             logging.error("Error while sending email: %s", mail_err)
             raise
 
@@ -225,7 +218,7 @@ def create_instance_details_file_and_notify(instance, shape=ARM_SHAPE):
     html_body = generate_html_body(instance)
 
     if NOTIFY_EMAIL:
-        send_email('OCI INSTANCE CREATED', html_body, EMAIL, EMAIL_PASSWORD)
+        send_email('OCI INSTANCE CREATED', html_body, EMAIL_FROM, EMAIL_TO, EMAIL_PASSWORD)
 
 
 def notify_on_failure(failure_msg):
@@ -246,7 +239,7 @@ def notify_on_failure(failure_msg):
     )
     write_into_file('UNHANDLED_ERROR.log', mail_body)
     if NOTIFY_EMAIL:
-        send_email('OCI INSTANCE CREATION SCRIPT: FAILED DUE TO AN ERROR', mail_body, EMAIL, EMAIL_PASSWORD)
+        send_email('OCI INSTANCE CREATION SCRIPT: FAILED DUE TO AN ERROR', mail_body, EMAIL_FROM, EMAIL_TO, EMAIL_PASSWORD)
 
 
 def check_instance_state_and_write(compartment_id, shape, states=('RUNNING', 'PROVISIONING'),
