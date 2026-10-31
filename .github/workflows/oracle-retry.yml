@@ -38,6 +38,9 @@ jobs:
           OCI_API_PRIVATE_KEY: ${{ secrets.OCI_API_PRIVATE_KEY }}
           OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
           OCI_SSH_PUBLIC_KEY: ${{ secrets.OCI_SSH_PUBLIC_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
         run: |
           umask 077
           printf '%s\n' "$OCI_API_PRIVATE_KEY" > oci_api_key.pem
@@ -66,7 +69,14 @@ jobs:
           OS_VERSION=22.04
           ASSIGN_PUBLIC_IP=true
           BOOT_VOLUME_SIZE=199
-          NOTIFY_EMAIL=False
+          if [ -n "$EMAIL_FROM" ] && [ -n "$EMAIL_TO" ] && [ -n "$EMAIL_PASSWORD" ]; then
+            NOTIFY_EMAIL=True
+          else
+            NOTIFY_EMAIL=False
+          fi
+          EMAIL_FROM=$EMAIL_FROM
+          EMAIL_TO=$EMAIL_TO
+          EMAIL_PASSWORD=$EMAIL_PASSWORD
           EOF
 
       - name: Retry instance creation
