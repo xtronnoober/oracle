@@ -55,6 +55,12 @@ jobs:
           key_file=$GITHUB_WORKSPACE/oci_api_key.pem
           EOF
 
+          if [ -n "$EMAIL_FROM" ] && [ -n "$EMAIL_TO" ] && [ -n "$EMAIL_PASSWORD" ]; then
+            NOTIFY_EMAIL=True
+          else
+            NOTIFY_EMAIL=False
+          fi
+
           cat > oci.env <<EOF
           OCI_CONFIG=$GITHUB_WORKSPACE/oci_config
           OCT_FREE_AD=AD-1
@@ -69,11 +75,7 @@ jobs:
           OS_VERSION=22.04
           ASSIGN_PUBLIC_IP=true
           BOOT_VOLUME_SIZE=199
-          if [ -n "$EMAIL_FROM" ] && [ -n "$EMAIL_TO" ] && [ -n "$EMAIL_PASSWORD" ]; then
-            NOTIFY_EMAIL=True
-          else
-            NOTIFY_EMAIL=False
-          fi
+          NOTIFY_EMAIL=$NOTIFY_EMAIL
           EMAIL_FROM=$EMAIL_FROM
           EMAIL_TO=$EMAIL_TO
           EMAIL_PASSWORD=$EMAIL_PASSWORD
