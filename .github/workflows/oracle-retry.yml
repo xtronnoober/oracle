@@ -55,7 +55,7 @@ jobs:
           cat > oci.env <<EOF
           OCI_CONFIG=$GITHUB_WORKSPACE/oci_config
           OCT_FREE_AD=AD-1
-          DISPLAY_NAME=mohit-arm-instance
+          DISPLAY_NAME=mohit
           OCI_COMPUTE_SHAPE=VM.Standard.A1.Flex
           SECOND_MICRO_INSTANCE=False
           REQUEST_WAIT_TIME_SECS=60
