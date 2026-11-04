@@ -32,6 +32,7 @@ except Exception:
 # stdout handler to that logger as well.
 oci_logger = logging.getLogger("launch_instance")
 oci_logger.setLevel(logging.INFO)
+oci_logger.propagate = False  # Prevent duplicate output via the root logger.
 if not any(getattr(handler, "_heroku_stdout", False) for handler in oci_logger.handlers):
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setLevel(logging.INFO)
