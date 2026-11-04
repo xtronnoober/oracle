@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ echo "[startup] Heroku worker startup script entered."
+
 required_vars=(
   OCI_USER
   OCI_TENANCY
@@ -19,6 +21,7 @@ for var_name in "${required_vars[@]}"; do
 done
 
 umask 077
+echo "[startup] Required config vars are present; writing OCI config files."
 printf '%s\n' "$OCI_API_PRIVATE_KEY" > "$PWD/oci_api_key.pem"
 printf '%s\n' "$OCI_SSH_PUBLIC_KEY" > "$PWD/id_rsa.pub"
 
@@ -57,4 +60,5 @@ EMAIL_TO=${EMAIL_TO:-}
 EMAIL_PASSWORD=${EMAIL_PASSWORD:-}
 EOF
 
+echo "[startup] Config files prepared. Starting Python worker."
 exec python -u heroku_worker.py
